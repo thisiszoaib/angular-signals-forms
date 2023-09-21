@@ -1,11 +1,16 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, effect, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatDatepickerModule } from '@angular/material/datepicker';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import {
+  FormControl,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
 
 @Component({
   selector: 'app-root',
@@ -18,7 +23,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
     MatFormFieldModule,
     FormsModule,
     ReactiveFormsModule,
-    MatDatepickerModule,
+    MatButtonModule,
   ],
   template: `
     <mat-toolbar color="primary"> Angular Forms with Signals </mat-toolbar>
@@ -26,12 +31,9 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
     <div class="container">
       <mat-form-field>
         <input
-          #firstNameControl="ngModel"
-          [ngModel]="firstName()"
-          (ngModelChange)="firstName.set($event)"
+          [formControl]="firstNameControl"
           matInput
           placeholder="First Name"
-          required
         />
         <mat-error *ngIf="firstNameControl.hasError('required')">
           This field is required
@@ -39,12 +41,9 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
       </mat-form-field>
       <mat-form-field>
         <input
-          #lastNameControl="ngModel"
-          [ngModel]="lastName()"
-          (ngModelChange)="lastName.set($event)"
+          [formControl]="lastNameControl"
           matInput
           placeholder="Last Name"
-          required
         />
         <mat-error *ngIf="lastNameControl.hasError('required')">
           This field is required
@@ -52,6 +51,10 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
       </mat-form-field>
 
       <h3>Full Name: {{ fullName() }}</h3>
+
+      <button mat-raised-button (click)="firstName.set('Zoaib')">
+        Set First Name to 'Zoaib'
+      </button>
     </div>
   `,
   styles: [
@@ -65,10 +68,25 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
   ],
 })
 export class AppComponent {
-  firstName = signal('Zoaib');
+  firstNameControl = new FormControl('', Validators.required);
+  lastNameControl = new FormControl('', Validators.required);
+
+  firstName = signal('');
   lastName = signal('');
 
   fullName = computed(() => `${this.firstName()} ${this.lastName()}`);
 
-  constructor() {}
+  constructor() {
+    effect(() => {
+      this.firstNameControl.patchValue(this.firstName(), { emitEvent: false });
+      this.lastNameControl.patchValue(this.lastName(), { emitEvent: false });
+    });
+
+    this.firstNameControl.valueChanges.subscribe((val) =>
+      this.firstName.set(val ?? '')
+    );
+    this.lastNameControl.valueChanges.subscribe((val) =>
+      this.lastName.set(val ?? '')
+    );
+  }
 }
